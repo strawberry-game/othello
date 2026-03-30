@@ -193,12 +193,6 @@
       border:1px solid rgba(255,255,255,.1);
     }
 
-    .btn-ghost{
-      background:transparent;
-      color:var(--muted);
-      border:1px dashed rgba(255,255,255,.16);
-    }
-
     .options{
       display:grid;
       gap:10px;
@@ -339,13 +333,6 @@
       line-height:1.8;
     }
 
-    .footer-note{
-      margin-top:12px;
-      text-align:center;
-      font-size:12px;
-      color:#94a3b8;
-    }
-
     .result-badge{
       display:inline-flex;
       align-items:center;
@@ -410,11 +397,6 @@
       .legend{
         margin-top:10px;
         font-size:12px;
-        line-height:1.6;
-      }
-
-      .footer-note{
-        font-size:11px;
         line-height:1.6;
       }
 
@@ -528,7 +510,7 @@
     <header class="header">
       <h1 class="title">オセロゲーム</h1>
       <p class="lead">
-        Apps Script で動くシンプルなWebアプリ版です。<br>
+        シンプルなオセロゲームです。<br>
         2人対戦にも、CPU対戦にも切り替えできます。
       </p>
     </header>
@@ -579,18 +561,20 @@
         </div>
 
         <div class="section">
-          <div class="buttons">
-            <button id="restartBtn" class="btn-primary">最初からやり直す</button>
-            <button id="passCheckBtn" class="btn-secondary">置ける場所を確認する</button>
-            <button id="helpBtn" class="btn-ghost">遊び方</button>
+          <div class="label">RULE</div>
+          <div class="message" style="min-height:auto;">
+            1. 黒が先手です。<br>
+            2. 相手の石を上下左右または斜めにはさめる場所に置きます。<br>
+            3. はさんだ石は自分の色に変わります。<br>
+            4. 置ける場所がないと自動でパスになります。<br>
+            5. 盤面が埋まるか、両者とも置けなくなったら終了です。
           </div>
         </div>
 
         <div class="section">
-          <div class="label">RULE</div>
-          <div class="message" style="min-height:auto;">
-            相手の石を直線ではさんだときに、その石が自分の色に変わります。<br>
-            置ける場所がないときは自動でパスになります。両者とも置けなくなったら終了です。
+          <div class="buttons">
+            <button id="restartBtn" class="btn-primary">最初からやり直す</button>
+            <button id="passCheckBtn" class="btn-secondary">置ける場所を確認する</button>
           </div>
         </div>
       </aside>
@@ -601,9 +585,6 @@
         </div>
         <div class="legend">
           黒が先手です。<span id="statusBadge" class="result-badge" style="display:none;">対局終了</span>
-        </div>
-        <div class="footer-note">
-          スマホで開いたときは、盤面を大きく・ボタンを押しやすくするように調整しています。
         </div>
       </section>
     </main>
@@ -638,7 +619,6 @@
     const hintToggleEl = document.getElementById('hintToggle');
     const restartBtnEl = document.getElementById('restartBtn');
     const passCheckBtnEl = document.getElementById('passCheckBtn');
-    const helpBtnEl = document.getElementById('helpBtn');
 
     function initGame() {
       board = Array.from({ length: SIZE }, () => Array(SIZE).fill(EMPTY));
@@ -943,22 +923,10 @@
       renderBoard();
     }
 
-    function showHelp() {
-      alert(
-        '【遊び方】\n' +
-        '1. 黒が先手です。\n' +
-        '2. 相手の石を上下左右または斜めにはさめる場所に置きます。\n' +
-        '3. はさんだ石は自分の色に変わります。\n' +
-        '4. 置ける場所がないと自動でパスになります。\n' +
-        '5. 盤面が埋まるか、両者とも置けなくなったら終了です。'
-      );
-    }
-
     cpuToggleEl.addEventListener('click', toggleCpu);
     hintToggleEl.addEventListener('click', toggleHints);
     restartBtnEl.addEventListener('click', initGame);
     passCheckBtnEl.addEventListener('click', checkMovesManually);
-    helpBtnEl.addEventListener('click', showHelp);
 
     cpuToggleEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
