@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>オセロゲーム</title>
+  <style>
+    :root{
+      --bg1:#0f172a;
+      --bg2:#1e293b;
+      --panel:#111827cc;
+      --line:#334155;
+      --board:#0b6b3a;
+      --board-dark:#08562f;
+      --cell-line:#064a28;
+      --text:#f8fafc;
+      --muted:#cbd5e1;
+      --accent:#fbbf24;
+      --good:#22c55e;
+      --bad:#ef4444;
+      --hint:#fde68a;
+      --shadow:0 10px 30px rgba(0,0,0,.28);
+    }
+
+    *{ box-sizing:border-box; }
+
+    html, body{
+      margin:0;
+      padding:0;
+      min-height:100%;
+    }
+
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top, rgba(251,191,36,.12), transparent 30%),
+        linear-gradient(160deg, var(--bg1), var(--bg2));
+    }
+
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:24px 16px 40px;
+    }
+
+    .header{
+      text-align:center;
+      margin-bottom:18px;
+    }
+
+    .title{
+      margin:0 0 8px;
+      font-size:clamp(26px, 4vw, 42px);
+      letter-spacing:.04em;
+    }
+
+    .lead{
+      margin:0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.7;
+    }
+
+    .layout{
+      display:grid;
+      grid-template-columns:340px 1fr;
+      gap:18px;
+      align-items:start;
+    }
+
+    .panel{
+      background:var(--panel);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .side{
+      padding:18px;
+      position:sticky;
+      top:18px;
+    }
+
+    .section + .section{
+      margin-top:16px;
+      padding-top:16px;
+      border-top:1px solid rgba(255,255,255,.08);
+    }
+
+    .label{
+      font-size:12px;
+      color:#94a3b8;
+      margin-bottom:8px;
+      letter-spacing:.08em;
+    }
+
+    .turn{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-size:18px;
+      font-weight:700;
+    }
+
+    .stone{
+      width:22px;
+      height:22px;
+      border-radius:50%;
+      display:inline-block;
+      border:1px solid rgba(255,255,255,.25);
+      box-shadow: inset 0 2px 6px rgba(255,255,255,.18), 0 2px 5px rgba(0,0,0,.35);
+      flex:0 0 auto;
+    }
+
+    .stone.black{
+      background:radial-gradient(circle at 35% 30%, #666, #111 55%, #000);
+    }
+
+    .stone.white{
+      background:radial-gradient(circle at 35% 30%, #fff, #e8e8e8 62%, #bdbdbd);
+    }
+
+    .score-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+
+    .score-card{
+      padding:14px;
+      border-radius:16px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .score-card .name{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:8px;
+    }
+
+    .score-card .value{
+      font-size:28px;
+      font-weight:800;
+      line-height:1;
+    }
+
+    .message{
+      min-height:72px;
+      padding:14px;
+      border-radius:16px;
+      line-height:1.8;
+      font-size:14px;
+      color:#f8fafc;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .buttons{
+      display:grid;
+      gap:10px;
+    }
+
+    button{
+      appearance:none;
+      border:none;
+      cursor:pointer;
+      border-radius:14px;
+      padding:13px 14px;
+      font-size:14px;
+      font-weight:700;
+      transition:transform .15s ease, opacity .15s ease, box-shadow .15s ease;
+      touch-action:manipulation;
+    }
+
+    button:hover{ transform:translateY(-1px); }
+    button:active{ transform:translateY(0); }
+
+    .btn-primary{
+      background:linear-gradient(180deg, #fbbf24, #f59e0b);
+      color:#1f2937;
+      box-shadow:0 8px 20px rgba(245,158,11,.25);
+    }
+
+    .btn-secondary{
+      background:rgba(255,255,255,.08);
+      color:var(--text);
+      border:1px solid rgba(255,255,255,.1);
+    }
+
+    .btn-ghost{
+      background:transparent;
+      color:var(--muted);
+      border:1px dashed rgba(255,255,255,.16);
+    }
+
+    .options{
+      display:grid;
+      gap:10px;
+    }
+
+    .option{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 14px;
+      border-radius:14px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .option span{
+      font-size:14px;
+      color:var(--text);
+      font-weight:600;
+    }
+
+    .toggle{
+      position:relative;
+      width:52px;
+      height:30px;
+      background:#475569;
+      border-radius:999px;
+      transition:.2s ease;
+      cursor:pointer;
+      flex:0 0 auto;
+      touch-action:manipulation;
+    }
+
+    .toggle::after{
+      content:"";
+      position:absolute;
+      top:3px;
+      left:3px;
+      width:24px;
+      height:24px;
+      border-radius:50%;
+      background:white;
+      transition:.2s ease;
+      box-shadow:0 2px 8px rgba(0,0,0,.25);
+    }
+
+    .toggle.active{
+      background:#22c55e;
+    }
+
+    .toggle.active::after{
+      left:25px;
+    }
+
+    .board-panel{
+      padding:18px;
+    }
+
+    .board-wrap{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+
+    .board{
+      width:min(82vw, 680px);
+      aspect-ratio:1 / 1;
+      display:grid;
+      grid-template-columns:repeat(8, 1fr);
+      grid-template-rows:repeat(8, 1fr);
+      background:linear-gradient(180deg, var(--board), var(--board-dark));
+      border:10px solid #5b3a1c;
+      border-radius:14px;
+      box-shadow:var(--shadow), inset 0 0 0 2px rgba(255,255,255,.05);
+      overflow:hidden;
+      user-select:none;
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    .cell{
+      position:relative;
+      border:1px solid var(--cell-line);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      transition:background-color .15s ease;
+      touch-action:manipulation;
+    }
+
+    .cell:hover{
+      background-color:rgba(255,255,255,.04);
+    }
+
+    .cell.hint::before{
+      content:"";
+      width:22%;
+      height:22%;
+      min-width:10px;
+      min-height:10px;
+      max-width:18px;
+      max-height:18px;
+      border-radius:50%;
+      background:rgba(253,230,138,.8);
+      box-shadow:0 0 0 2px rgba(0,0,0,.12);
+    }
+
+    .disc{
+      width:76%;
+      height:76%;
+      border-radius:50%;
+      box-shadow: inset 0 2px 7px rgba(255,255,255,.15), 0 3px 7px rgba(0,0,0,.35);
+      transform:scale(.92);
+      animation:pop .18s ease-out;
+    }
+
+    .disc.black{
+      background:radial-gradient(circle at 35% 30%, #666, #161616 55%, #000);
+      border:1px solid rgba(255,255,255,.1);
+    }
+
+    .disc.white{
+      background:radial-gradient(circle at 35% 30%, #fff, #ededed 60%, #cfcfcf);
+      border:1px solid rgba(0,0,0,.08);
+    }
+
+    @keyframes pop{
+      from{ transform:scale(.6); opacity:.5; }
+      to{ transform:scale(.92); opacity:1; }
+    }
+
+    .legend{
+      margin-top:12px;
+      text-align:center;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.8;
+    }
+
+    .footer-note{
+      margin-top:12px;
+      text-align:center;
+      font-size:12px;
+      color:#94a3b8;
+    }
+
+    .result-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(34,197,94,.12);
+      color:#dcfce7;
+      border:1px solid rgba(34,197,94,.22);
+      font-size:13px;
+      font-weight:700;
+    }
+
+    .danger{
+      background:rgba(239,68,68,.12);
+      color:#fee2e2;
+      border-color:rgba(239,68,68,.24);
+    }
+
+    @media (max-width: 920px){
+      .wrap{
+        padding:14px 10px 22px;
+      }
+
+      .header{
+        margin-bottom:12px;
+      }
+
+      .title{
+        font-size:28px;
+      }
+
+      .lead{
+        font-size:13px;
+        line-height:1.6;
+      }
+
+      .layout{
+        grid-template-columns:1fr;
+        gap:12px;
+      }
+
+      .side{
+        position:static;
+        top:auto;
+        padding:14px;
+        order:2;
+      }
+
+      .board-panel{
+        padding:12px;
+        order:1;
+      }
+
+      .board{
+        width:min(95vw, 95svw);
+        max-width:95vw;
+        border-width:6px;
+        border-radius:12px;
+      }
+
+      .legend{
+        margin-top:10px;
+        font-size:12px;
+        line-height:1.6;
+      }
+
+      .footer-note{
+        font-size:11px;
+        line-height:1.6;
+      }
+
+      .section + .section{
+        margin-top:12px;
+        padding-top:12px;
+      }
+
+      .turn{
+        font-size:16px;
+      }
+
+      .score-grid{
+        gap:10px;
+      }
+
+      .score-card{
+        padding:12px;
+      }
+
+      .score-card .value{
+        font-size:22px;
+      }
+
+      .message{
+        min-height:auto;
+        padding:12px;
+        font-size:13px;
+        line-height:1.7;
+      }
+
+      .buttons{
+        gap:8px;
+      }
+
+      button{
+        padding:16px 14px;
+        font-size:16px;
+        border-radius:12px;
+      }
+
+      .option{
+        padding:12px;
+      }
+
+      .option span{
+        font-size:13px;
+      }
+
+      .toggle{
+        transform:scale(1.02);
+        transform-origin:right center;
+      }
+    }
+
+    @media (max-width: 480px){
+      .wrap{
+        padding:10px 8px 18px;
+      }
+
+      .panel{
+        border-radius:16px;
+      }
+
+      .board{
+        width:min(96vw, 96svw);
+      }
+
+      .title{
+        font-size:24px;
+      }
+
+      .lead{
+        font-size:12px;
+      }
+
+      .label{
+        font-size:11px;
+      }
+
+      .turn{
+        gap:10px;
+        font-size:15px;
+      }
+
+      .stone{
+        width:20px;
+        height:20px;
+      }
+
+      .score-card .name{
+        font-size:12px;
+      }
+
+      .score-card .value{
+        font-size:20px;
+      }
+
+      .message{
+        font-size:12px;
+      }
+
+      .legend{
+        font-size:11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="header">
+      <h1 class="title">オセロゲーム</h1>
+      <p class="lead">
+        Apps Script で動くシンプルなWebアプリ版です。<br>
+        2人対戦にも、CPU対戦にも切り替えできます。
+      </p>
+    </header>
+
+    <main class="layout">
+      <aside class="panel side">
+        <div class="section">
+          <div class="label">TURN</div>
+          <div class="turn">
+            <span id="turnStone" class="stone black"></span>
+            <span id="turnText">黒の番です</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="label">SCORE</div>
+          <div class="score-grid">
+            <div class="score-card">
+              <div class="name"><span class="stone black"></span>黒</div>
+              <div class="value" id="blackScore">2</div>
+            </div>
+            <div class="score-card">
+              <div class="name"><span class="stone white"></span>白</div>
+              <div class="value" id="whiteScore">2</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="label">MODE</div>
+          <div class="options">
+            <div class="option">
+              <span>CPU対戦</span>
+              <div id="cpuToggle" class="toggle" role="switch" aria-checked="false" tabindex="0"></div>
+            </div>
+            <div class="option">
+              <span>置ける場所を表示</span>
+              <div id="hintToggle" class="toggle active" role="switch" aria-checked="true" tabindex="0"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="label">MESSAGE</div>
+          <div id="messageBox" class="message">
+            先手は黒です。置けるマスを選んで始めてください。
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="buttons">
+            <button id="restartBtn" class="btn-primary">最初からやり直す</button>
+            <button id="passCheckBtn" class="btn-secondary">置ける場所を確認する</button>
+            <button id="helpBtn" class="btn-ghost">遊び方</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="label">RULE</div>
+          <div class="message" style="min-height:auto;">
+            相手の石を直線ではさんだときに、その石が自分の色に変わります。<br>
+            置ける場所がないときは自動でパスになります。両者とも置けなくなったら終了です。
+          </div>
+        </div>
+      </aside>
+
+      <section class="panel board-panel">
+        <div class="board-wrap">
+          <div id="board" class="board" aria-label="オセロ盤"></div>
+        </div>
+        <div class="legend">
+          黒が先手です。<span id="statusBadge" class="result-badge" style="display:none;">対局終了</span>
+        </div>
+        <div class="footer-note">
+          スマホで開いたときは、盤面を大きく・ボタンを押しやすくするように調整しています。
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const SIZE = 8;
+    const EMPTY = 0;
+    const BLACK = 1;
+    const WHITE = 2;
+    const DIRECTIONS = [
+      [-1,-1], [-1,0], [-1,1],
+      [0,-1],          [0,1],
+      [1,-1],  [1,0],  [1,1]
+    ];
+
+    let board = [];
+    let currentPlayer = BLACK;
+    let gameOver = false;
+    let cpuEnabled = false;
+    let showHints = true;
+
+    const boardEl = document.getElementById('board');
+    const blackScoreEl = document.getElementById('blackScore');
+    const whiteScoreEl = document.getElementById('whiteScore');
+    const turnTextEl = document.getElementById('turnText');
+    const turnStoneEl = document.getElementById('turnStone');
+    const messageBoxEl = document.getElementById('messageBox');
+    const statusBadgeEl = document.getElementById('statusBadge');
+
+    const cpuToggleEl = document.getElementById('cpuToggle');
+    const hintToggleEl = document.getElementById('hintToggle');
+    const restartBtnEl = document.getElementById('restartBtn');
+    const passCheckBtnEl = document.getElementById('passCheckBtn');
+    const helpBtnEl = document.getElementById('helpBtn');
+
+    function initGame() {
+      board = Array.from({ length: SIZE }, () => Array(SIZE).fill(EMPTY));
+      board[3][3] = WHITE;
+      board[3][4] = BLACK;
+      board[4][3] = BLACK;
+      board[4][4] = WHITE;
+      currentPlayer = BLACK;
+      gameOver = false;
+      statusBadgeEl.style.display = 'none';
+      statusBadgeEl.classList.remove('danger');
+      setMessage('先手は黒です。置けるマスを選んで始めてください。');
+      renderBoard();
+      updateStatus();
+      maybeRunCpu();
+    }
+
+    function renderBoard() {
+      boardEl.innerHTML = '';
+      const validMoves = getValidMoves(currentPlayer);
+
+      for (let row = 0; row < SIZE; row++) {
+        for (let col = 0; col < SIZE; col++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.row = row;
+          cell.dataset.col = col;
+
+          if (!gameOver && showHints && hasMove(validMoves, row, col)) {
+            cell.classList.add('hint');
+          }
+
+          cell.addEventListener('click', () => handleCellClick(row, col));
+
+          if (board[row][col] !== EMPTY) {
+            const disc = document.createElement('div');
+            disc.className = 'disc ' + (board[row][col] === BLACK ? 'black' : 'white');
+            cell.appendChild(disc);
+          }
+
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    function handleCellClick(row, col) {
+      if (gameOver) return;
+      if (cpuEnabled && currentPlayer === WHITE) return;
+
+      const flipped = getFlippedDiscs(row, col, currentPlayer);
+      if (flipped.length === 0) {
+        setMessage('そこには置けません。相手の石をはさめる場所を選んでください。');
+        return;
+      }
+
+      placeDisc(row, col, currentPlayer, flipped);
+      nextTurn();
+    }
+
+    function placeDisc(row, col, player, flipped) {
+      board[row][col] = player;
+      flipped.forEach(([r, c]) => {
+        board[r][c] = player;
+      });
+      renderBoard();
+      updateStatus();
+    }
+
+    function nextTurn() {
+      const opponent = getOpponent(currentPlayer);
+      const opponentMoves = getValidMoves(opponent);
+      const myMoves = getValidMoves(currentPlayer);
+
+      if (opponentMoves.length > 0) {
+        currentPlayer = opponent;
+        updateStatus();
+        setTurnMessage();
+        maybeRunCpu();
+        return;
+      }
+
+      if (myMoves.length > 0) {
+        updateStatus();
+        setMessage((opponent === BLACK ? '黒' : '白') + 'は置ける場所がないためパスです。' + (currentPlayer === BLACK ? ' 黒の番を続けます。' : ' 白の番を続けます。'));
+        maybeRunCpu();
+        return;
+      }
+
+      finishGame();
+    }
+
+    function finishGame() {
+      gameOver = true;
+      const { black, white } = countDiscs();
+      statusBadgeEl.style.display = 'inline-flex';
+
+      if (black > white) {
+        setMessage('対局終了です。黒の勝ちです。お見事です。');
+      } else if (white > black) {
+        setMessage(cpuEnabled ? '対局終了です。白（CPU）の勝ちです。' : '対局終了です。白の勝ちです。');
+      } else {
+        setMessage('対局終了です。引き分けです。');
+        statusBadgeEl.classList.add('danger');
+      }
+
+      updateStatus();
+      renderBoard();
+    }
+
+    function maybeRunCpu() {
+      if (!cpuEnabled || gameOver || currentPlayer !== WHITE) return;
+
+      const moves = getValidMoves(WHITE);
+      if (moves.length === 0) return;
+
+      setMessage('CPUが考えています…');
+      setTimeout(() => {
+        const move = chooseCpuMove(moves);
+        const flipped = getFlippedDiscs(move.row, move.col, WHITE);
+        placeDisc(move.row, move.col, WHITE, flipped);
+        nextTurn();
+      }, 500);
+    }
+
+    function chooseCpuMove(moves) {
+      const corners = moves.filter(m => isCorner(m.row, m.col));
+      if (corners.length) return randomPick(corners);
+
+      const goodEdges = moves.filter(m => isEdge(m.row, m.col));
+      if (goodEdges.length) return randomPick(goodEdges);
+
+      let bestScore = -Infinity;
+      let bestMoves = [];
+
+      moves.forEach(move => {
+        const flipped = getFlippedDiscs(move.row, move.col, WHITE);
+        let score = flipped.length;
+
+        if (isNearCorner(move.row, move.col)) score -= 3;
+        if (isCenterish(move.row, move.col)) score += 1;
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestMoves = [move];
+        } else if (score === bestScore) {
+          bestMoves.push(move);
+        }
+      });
+
+      return randomPick(bestMoves);
+    }
+
+    function isCorner(row, col) {
+      return (row === 0 || row === SIZE - 1) && (col === 0 || col === SIZE - 1);
+    }
+
+    function isEdge(row, col) {
+      return row === 0 || row === SIZE - 1 || col === 0 || col === SIZE - 1;
+    }
+
+    function isNearCorner(row, col) {
+      const nearCorners = [
+        [0,1],[1,0],[1,1],
+        [0,6],[1,6],[1,7],
+        [6,0],[6,1],[7,1],
+        [6,6],[6,7],[7,6]
+      ];
+      return nearCorners.some(([r, c]) => r === row && c === col);
+    }
+
+    function isCenterish(row, col) {
+      return row >= 2 && row <= 5 && col >= 2 && col <= 5;
+    }
+
+    function getValidMoves(player) {
+      const moves = [];
+      for (let row = 0; row < SIZE; row++) {
+        for (let col = 0; col < SIZE; col++) {
+          if (board[row][col] === EMPTY && getFlippedDiscs(row, col, player).length > 0) {
+            moves.push({ row, col });
+          }
+        }
+      }
+      return moves;
+    }
+
+    function getFlippedDiscs(row, col, player) {
+      if (!isInside(row, col) || board[row][col] !== EMPTY) return [];
+
+      const opponent = getOpponent(player);
+      let flippedAll = [];
+
+      for (const [dr, dc] of DIRECTIONS) {
+        let r = row + dr;
+        let c = col + dc;
+        let line = [];
+
+        while (isInside(r, c) && board[r][c] === opponent) {
+          line.push([r, c]);
+          r += dr;
+          c += dc;
+        }
+
+        if (line.length > 0 && isInside(r, c) && board[r][c] === player) {
+          flippedAll = flippedAll.concat(line);
+        }
+      }
+
+      return flippedAll;
+    }
+
+    function updateStatus() {
+      const { black, white } = countDiscs();
+      blackScoreEl.textContent = black;
+      whiteScoreEl.textContent = white;
+
+      if (gameOver) {
+        turnTextEl.textContent = '対局終了';
+        turnStoneEl.className = 'stone ' + (black >= white ? 'black' : 'white');
+        return;
+      }
+
+      turnTextEl.textContent = (currentPlayer === BLACK ? '黒の番です' : (cpuEnabled ? '白（CPU）の番です' : '白の番です'));
+      turnStoneEl.className = 'stone ' + (currentPlayer === BLACK ? 'black' : 'white');
+    }
+
+    function setTurnMessage() {
+      if (gameOver) return;
+      if (currentPlayer === BLACK) {
+        setMessage('黒の番です。相手の石をはさめる場所に置いてください。');
+      } else {
+        setMessage(cpuEnabled
+          ? '白（CPU）の番です。少しお待ちください。'
+          : '白の番です。相手の石をはさめる場所に置いてください。');
+      }
+    }
+
+    function countDiscs() {
+      let black = 0;
+      let white = 0;
+
+      for (let row = 0; row < SIZE; row++) {
+        for (let col = 0; col < SIZE; col++) {
+          if (board[row][col] === BLACK) black++;
+          if (board[row][col] === WHITE) white++;
+        }
+      }
+
+      return { black, white };
+    }
+
+    function getOpponent(player) {
+      return player === BLACK ? WHITE : BLACK;
+    }
+
+    function isInside(row, col) {
+      return row >= 0 && row < SIZE && col >= 0 && col < SIZE;
+    }
+
+    function hasMove(moves, row, col) {
+      return moves.some(move => move.row === row && move.col === col);
+    }
+
+    function randomPick(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function setMessage(text) {
+      messageBoxEl.textContent = text;
+    }
+
+    function toggleCpu() {
+      cpuEnabled = !cpuEnabled;
+      cpuToggleEl.classList.toggle('active', cpuEnabled);
+      cpuToggleEl.setAttribute('aria-checked', String(cpuEnabled));
+      initGame();
+      setMessage(cpuEnabled
+        ? 'CPU対戦をONにしました。あなたは黒、CPUは白です。'
+        : '2人対戦に切り替えました。黒から始めてください。');
+    }
+
+    function toggleHints() {
+      showHints = !showHints;
+      hintToggleEl.classList.toggle('active', showHints);
+      hintToggleEl.setAttribute('aria-checked', String(showHints));
+      renderBoard();
+      setMessage(showHints ? '置ける場所の表示をONにしました。' : '置ける場所の表示をOFFにしました。');
+    }
+
+    function checkMovesManually() {
+      if (gameOver) {
+        setMessage('対局は終了しています。もう一度遊ぶ場合は「最初からやり直す」を押してください。');
+        return;
+      }
+
+      const moves = getValidMoves(currentPlayer);
+      if (moves.length === 0) {
+        setMessage((currentPlayer === BLACK ? '黒' : '白') + 'は現在置ける場所がありません。');
+      } else {
+        setMessage((currentPlayer === BLACK ? '黒' : '白') + 'は ' + moves.length + ' か所に置けます。');
+      }
+      renderBoard();
+    }
+
+    function showHelp() {
+      alert(
+        '【遊び方】\n' +
+        '1. 黒が先手です。\n' +
+        '2. 相手の石を上下左右または斜めにはさめる場所に置きます。\n' +
+        '3. はさんだ石は自分の色に変わります。\n' +
+        '4. 置ける場所がないと自動でパスになります。\n' +
+        '5. 盤面が埋まるか、両者とも置けなくなったら終了です。'
+      );
+    }
+
+    cpuToggleEl.addEventListener('click', toggleCpu);
+    hintToggleEl.addEventListener('click', toggleHints);
+    restartBtnEl.addEventListener('click', initGame);
+    passCheckBtnEl.addEventListener('click', checkMovesManually);
+    helpBtnEl.addEventListener('click', showHelp);
+
+    cpuToggleEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleCpu();
+      }
+    });
+
+    hintToggleEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleHints();
+      }
+    });
+
+    initGame();
+  </script>
+</body>
+</html>
