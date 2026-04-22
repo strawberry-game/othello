@@ -47,6 +47,30 @@
     .header{
       text-align:center;
       margin-bottom:18px;
+      position:relative;
+      padding:20px 16px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.12);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      box-shadow:0 10px 30px rgba(0,0,0,.22);
+      overflow:hidden;
+    }
+
+    .header::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      padding:1px;
+      border-radius:18px;
+      background:linear-gradient(120deg, rgba(255,255,255,.22), rgba(251,191,36,.2), rgba(255,255,255,.12));
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite:xor;
+      mask-composite:exclude;
+      pointer-events:none;
+      opacity:.9;
     }
 
     .title{
@@ -288,19 +312,6 @@
       background-color:rgba(255,255,255,.04);
     }
 
-    .cell.hint::before{
-      content:"";
-      width:22%;
-      height:22%;
-      min-width:10px;
-      min-height:10px;
-      max-width:18px;
-      max-height:18px;
-      border-radius:50%;
-      background:rgba(253,230,138,.8);
-      box-shadow:0 0 0 2px rgba(0,0,0,.12);
-    }
-
     .disc{
       width:76%;
       height:76%;
@@ -359,6 +370,7 @@
 
       .header{
         margin-bottom:12px;
+        padding:16px 12px;
       }
 
       .title{
@@ -556,10 +568,6 @@
               <span>CPU対戦</span>
               <div id="cpuToggle" class="toggle" role="switch" aria-checked="false" tabindex="0"></div>
             </div>
-            <div class="option">
-              <span>置ける場所を表示</span>
-              <div id="hintToggle" class="toggle active" role="switch" aria-checked="true" tabindex="0"></div>
-            </div>
           </div>
         </div>
 
@@ -615,7 +623,6 @@
     let currentPlayer = BLACK;
     let gameOver = false;
     let cpuEnabled = false;
-    let showHints = true;
 
     const boardEl = document.getElementById('board');
     const blackScoreEl = document.getElementById('blackScore');
@@ -626,7 +633,6 @@
     const statusBadgeEl = document.getElementById('statusBadge');
 
     const cpuToggleEl = document.getElementById('cpuToggle');
-    const hintToggleEl = document.getElementById('hintToggle');
     const restartBtnEl = document.getElementById('restartBtn');
     const passCheckBtnEl = document.getElementById('passCheckBtn');
 
@@ -648,7 +654,6 @@
 
     function renderBoard() {
       boardEl.innerHTML = '';
-      const validMoves = getValidMoves(currentPlayer);
 
       for (let row = 0; row < SIZE; row++) {
         for (let col = 0; col < SIZE; col++) {
@@ -656,10 +661,6 @@
           cell.className = 'cell';
           cell.dataset.row = row;
           cell.dataset.col = col;
-
-          if (!gameOver && showHints && hasMove(validMoves, row, col)) {
-            cell.classList.add('hint');
-          }
 
           cell.addEventListener('click', () => handleCellClick(row, col));
 
@@ -888,10 +889,6 @@
       return row >= 0 && row < SIZE && col >= 0 && col < SIZE;
     }
 
-    function hasMove(moves, row, col) {
-      return moves.some(move => move.row === row && move.col === col);
-    }
-
     function randomPick(arr) {
       return arr[Math.floor(Math.random() * arr.length)];
     }
@@ -910,13 +907,6 @@
         : '2人対戦に切り替えました。黒から始めてください。');
     }
 
-    function toggleHints() {
-      showHints = !showHints;
-      hintToggleEl.classList.toggle('active', showHints);
-      hintToggleEl.setAttribute('aria-checked', String(showHints));
-      renderBoard();
-      setMessage(showHints ? '置ける場所の表示をONにしました。' : '置ける場所の表示をOFFにしました。');
-    }
 
     function checkMovesManually() {
       if (gameOver) {
@@ -934,7 +924,6 @@
     }
 
     cpuToggleEl.addEventListener('click', toggleCpu);
-    hintToggleEl.addEventListener('click', toggleHints);
     restartBtnEl.addEventListener('click', initGame);
     passCheckBtnEl.addEventListener('click', checkMovesManually);
 
@@ -945,12 +934,6 @@
       }
     });
 
-    hintToggleEl.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        toggleHints();
-      }
-    });
 
     initGame();
   </script>
