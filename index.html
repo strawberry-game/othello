@@ -602,7 +602,6 @@
         <div class="section">
           <div class="buttons">
             <button id="restartBtn" class="btn-primary">最初からやり直す</button>
-            <button id="passCheckBtn" class="btn-secondary">置ける場所を確認する</button>
           </div>
         </div>
       </aside>
@@ -644,7 +643,6 @@
 
     const cpuToggleEl = document.getElementById('cpuToggle');
     const restartBtnEl = document.getElementById('restartBtn');
-    const passCheckBtnEl = document.getElementById('passCheckBtn');
 
     function initGame() {
       board = Array.from({ length: SIZE }, () => Array(SIZE).fill(EMPTY));
@@ -918,24 +916,8 @@
     }
 
 
-    function checkMovesManually() {
-      if (gameOver) {
-        setMessage('対局は終了しています。もう一度遊ぶ場合は「最初からやり直す」を押してください。');
-        return;
-      }
-
-      const moves = getValidMoves(currentPlayer);
-      if (moves.length === 0) {
-        setMessage((currentPlayer === BLACK ? '黒' : '白') + 'は現在置ける場所がありません。');
-      } else {
-        setMessage((currentPlayer === BLACK ? '黒' : '白') + 'は ' + moves.length + ' か所に置けます。');
-      }
-      renderBoard();
-    }
-
     cpuToggleEl.addEventListener('click', toggleCpu);
     restartBtnEl.addEventListener('click', initGame);
-    passCheckBtnEl.addEventListener('click', checkMovesManually);
 
     cpuToggleEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
